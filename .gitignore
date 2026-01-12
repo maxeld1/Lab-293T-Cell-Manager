@@ -1,0 +1,19 @@
+# virtualenv
+.venv/
+venv/
+
+# pyinstaller outputs (DO NOT COMMIT)
+build/
+dist/
+*.spec
+
+# python
+__pycache__/
+*.pyc
+
+# pytest/coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+.idea/
