@@ -1,6 +1,7 @@
 import pandas as pd
 from lab_293t_scheduler_app import build_ics
 
+
 def test_build_ics_structure_and_event_count():
     df = pd.DataFrame(
         [
