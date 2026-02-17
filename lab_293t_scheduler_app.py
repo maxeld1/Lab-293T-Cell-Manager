@@ -227,46 +227,73 @@ def build_ics(df: pd.DataFrame, event_hour: int = 9, duration_minutes: int = 60,
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("293T Split Scheduler ✨")
-        self.resize(1150, 750)
+        self.setWindowTitle("293T Split Scheduler")
+        self.resize(1220, 780)
         self.setStyleSheet(self._refined_qss())
 
         # Header
-        header = QtWidgets.QWidget()
-        header_layout = QtWidgets.QVBoxLayout(header)
-        header_layout.setContentsMargins(0, 20, 0, 10)
-        logo_label = QtWidgets.QLabel()
-        logo_pixmap = QtGui.QPixmap(resource_path("293T-Logo.ico")).scaledToHeight(
-            60, QtCore.Qt.TransformationMode.SmoothTransformation)
-        logo_label.setPixmap(logo_pixmap)
-        logo_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        title = QtWidgets.QLabel("<h2 style='color:#2f3640;'>293T Split Scheduler</h2>")
-        subtitle = QtWidgets.QLabel("<i style='color:#718093;'>Automate cell split rotations with a single click</i>")
-        title.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        subtitle.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        header_layout.addWidget(title)
-        header_layout.addWidget(subtitle)
+        header = self._build_header_card()
 
         # Groups
         groupBoxInput = QtWidgets.QGroupBox("Groups")
-        self.groupAEdit = QtWidgets.QPlainTextEdit(); self.groupAEdit.setPlaceholderText("Group A names – one per line")
-        self.groupBEdit = QtWidgets.QPlainTextEdit(); self.groupBEdit.setPlaceholderText("Group B names – one per line")
+        self.groupAEdit = QtWidgets.QPlainTextEdit()
+        self.groupAEdit.setPlaceholderText("Group A names, one per line")
+        self.groupBEdit = QtWidgets.QPlainTextEdit()
+        self.groupBEdit.setPlaceholderText("Group B names, one per line")
+        self.groupAEdit.setObjectName("group_editor")
+        self.groupBEdit.setObjectName("group_editor")
+        self.groupAEdit.setMinimumHeight(130)
+        self.groupBEdit.setMinimumHeight(130)
+
+        groupACol = QtWidgets.QWidget()
+        groupAColLayout = QtWidgets.QVBoxLayout(groupACol)
+        groupAColLayout.setContentsMargins(0, 0, 0, 0)
+        groupAColLayout.setSpacing(6)
+        groupAColLayout.addWidget(QtWidgets.QLabel("Group A"))
+        groupAColLayout.addWidget(self.groupAEdit)
+
+        groupBCol = QtWidgets.QWidget()
+        groupBColLayout = QtWidgets.QVBoxLayout(groupBCol)
+        groupBColLayout.setContentsMargins(0, 0, 0, 0)
+        groupBColLayout.setSpacing(6)
+        groupBColLayout.addWidget(QtWidgets.QLabel("Group B"))
+        groupBColLayout.addWidget(self.groupBEdit)
+
         hl_inputs = QtWidgets.QHBoxLayout(groupBoxInput)
-        hl_inputs.addWidget(self.groupAEdit)
-        hl_inputs.addWidget(self.groupBEdit)
+        hl_inputs.setSpacing(14)
+        hl_inputs.addWidget(groupACol)
+        hl_inputs.addWidget(groupBCol)
 
         # Parameters
         groupBoxParams = QtWidgets.QGroupBox("Parameters")
-        self.startDate = QtWidgets.QDateEdit(calendarPopup=True); self.startDate.setDate(QtCore.QDate.currentDate()); self.startDate.setDisplayFormat("yyyy-MM-dd")
-        self.endDate = QtWidgets.QDateEdit(calendarPopup=True); self.endDate.setDate(self.startDate.date().addMonths(1)); self.endDate.setDisplayFormat("yyyy-MM-dd")
-        self.useEndDateRadio = QtWidgets.QRadioButton("End by date"); self.useNumEventsRadio = QtWidgets.QRadioButton("End after N split days"); self.useEndDateRadio.setChecked(True)
-        self.numEventsSpin = QtWidgets.QSpinBox(); self.numEventsSpin.setRange(1, 10000); self.numEventsSpin.setValue(40)
-        self.intervalSpin = QtWidgets.QSpinBox(); self.intervalSpin.setRange(12, 240); self.intervalSpin.setValue(48); self.intervalSpin.setSuffix(" h")
-        self.roleCombo = QtWidgets.QComboBox(); self.roleCombo.addItems(["A=weekday, B=weekend", "A=weekend, B=weekday"])
-        self.passageStartCombo = QtWidgets.QComboBox(); self.passageStartCombo.addItems(PASSAGE_CYCLE)
-        self.skipDatesEdit = QtWidgets.QPlainTextEdit(); self.skipDatesEdit.setPlaceholderText("Optional skip dates (YYYY-MM-DD)")
+        self.startDate = QtWidgets.QDateEdit(calendarPopup=True)
+        self.startDate.setDate(QtCore.QDate.currentDate())
+        self.startDate.setDisplayFormat("yyyy-MM-dd")
+        self.endDate = QtWidgets.QDateEdit(calendarPopup=True)
+        self.endDate.setDate(self.startDate.date().addMonths(1))
+        self.endDate.setDisplayFormat("yyyy-MM-dd")
+        self.useEndDateRadio = QtWidgets.QRadioButton("End by date")
+        self.useNumEventsRadio = QtWidgets.QRadioButton("End after N split days")
+        self.useEndDateRadio.setChecked(True)
+        self.numEventsSpin = QtWidgets.QSpinBox()
+        self.numEventsSpin.setRange(1, 10000)
+        self.numEventsSpin.setValue(40)
+        self.intervalSpin = QtWidgets.QSpinBox()
+        self.intervalSpin.setRange(12, 240)
+        self.intervalSpin.setValue(48)
+        self.intervalSpin.setSuffix(" h")
+        self.roleCombo = QtWidgets.QComboBox()
+        self.roleCombo.addItems(["A=weekday, B=weekend", "A=weekend, B=weekday"])
+        self.passageStartCombo = QtWidgets.QComboBox()
+        self.passageStartCombo.addItems(PASSAGE_CYCLE)
+        self.skipDatesEdit = QtWidgets.QPlainTextEdit()
+        self.skipDatesEdit.setPlaceholderText("Optional skip dates (YYYY-MM-DD), one per line")
+        self.skipDatesEdit.setMaximumHeight(96)
 
         form = QtWidgets.QFormLayout(groupBoxParams)
+        form.setContentsMargins(14, 18, 14, 12)
+        form.setHorizontalSpacing(22)
+        form.setVerticalSpacing(10)
         form.addRow("Start date", self.startDate)
         form.addRow(self.useEndDateRadio, self.endDate)
         form.addRow(self.useNumEventsRadio, self.numEventsSpin)
@@ -276,28 +303,44 @@ class MainWindow(QtWidgets.QMainWindow):
         form.addRow("Skip dates", self.skipDatesEdit)
 
         # Buttons
-        self.previewBtn = QtWidgets.QPushButton("🔍 Preview schedule")
-        self.exportCsvBtn = QtWidgets.QPushButton("📄 Export CSV")
-        self.exportIcsBtn = QtWidgets.QPushButton("📅 Export ICS")
+        self.previewBtn = QtWidgets.QPushButton("Preview Schedule")
+        self.exportCsvBtn = QtWidgets.QPushButton("Export CSV")
+        self.exportIcsBtn = QtWidgets.QPushButton("Export ICS")
+        self.previewBtn.setProperty("variant", "primary")
+        self.exportCsvBtn.setProperty("variant", "secondary")
+        self.exportIcsBtn.setProperty("variant", "secondary")
         for btn in (self.previewBtn, self.exportCsvBtn, self.exportIcsBtn):
             btn.setMinimumHeight(40)
         btnLayout = QtWidgets.QHBoxLayout()
-        btnLayout.addStretch(); btnLayout.addWidget(self.previewBtn); btnLayout.addWidget(self.exportCsvBtn); btnLayout.addWidget(self.exportIcsBtn); btnLayout.addStretch()
+        btnLayout.setSpacing(10)
+        btnLayout.addWidget(self.previewBtn)
+        btnLayout.addWidget(self.exportCsvBtn)
+        btnLayout.addWidget(self.exportIcsBtn)
+        btnLayout.addStretch()
 
         # Table
         groupBoxPreview = QtWidgets.QGroupBox("Schedule Preview")
-        self.table = QtWidgets.QTableView(); self.table.setAlternatingRowColors(True)
+        self.table = QtWidgets.QTableView()
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setSortingEnabled(True)
         vboxPreview = QtWidgets.QVBoxLayout(groupBoxPreview)
         vboxPreview.addWidget(self.table)
 
+        topSplit = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
+        topSplit.setChildrenCollapsible(False)
+        topSplit.addWidget(groupBoxInput)
+        topSplit.addWidget(groupBoxParams)
+        topSplit.setSizes([650, 470])
+
         # Root layout
         mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addWidget(logo_label)
-        mainLayout.addWidget(title)
-        mainLayout.addWidget(subtitle)
+        mainLayout.setContentsMargins(20, 20, 20, 20)
+        mainLayout.setSpacing(14)
         mainLayout.addWidget(header)
-        mainLayout.addWidget(groupBoxInput)
-        mainLayout.addWidget(groupBoxParams)
+        mainLayout.addWidget(topSplit)
         mainLayout.addLayout(btnLayout)
         mainLayout.addWidget(groupBoxPreview)
 
@@ -311,68 +354,142 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.current_df: Optional[pd.DataFrame] = None
 
-    # def _refined_qss(self) -> str:
-    #     # Stronger text color + clear placeholders for visibility
-    #     return """
-    #     QWidget { font-family: 'Segoe UI Variable', 'Segoe UI', Arial; font-size: 11pt; color: #1e272e; }
-    #     QMainWindow { background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f5f6fa, stop:1 #eaecef); }
-    #     QGroupBox { border: 1px solid #dcdde1; border-radius: 10px; margin-top: 10px; padding: 10px; font-weight: 600; color: #2f3640; }
-    #     QPushButton { background-color: #4a90e2; color: #ffffff; border-radius: 10px; padding: 10px 20px; font-weight: bold; }
-    #     QPushButton:hover { background-color: #357ABD; }
-    #     QPushButton:pressed { background-color: #2c5ea0; }
-    #     QPlainTextEdit, QDateEdit, QSpinBox, QComboBox {
-    #         background: #ffffff; border-radius: 8px; border: 1px solid #b0b0b0; padding: 6px; color: #1e272e;
-    #         selection-background-color: #4a90e2; selection-color: #ffffff;
-    #     }
-    #     QLineEdit, QTextEdit, QPlainTextEdit { color: #1e272e; }
-    #     QLineEdit::placeholder, QTextEdit[placeholderText], QPlainTextEdit[placeholderText] { color: #5a6570; }
-    #     /* Fallback for placeholder where attribute selector may not apply */
-    #     QPlainTextEdit QScrollBar:vertical { width: 12px; }
-    #     QTableView { alternate-background-color: #f2f4f8; background: #ffffff; gridline-color: #cccccc; selection-background-color: #4a90e2; selection-color: #ffffff; }
-    #     QLabel { color: #2f3640; }
-    #     """
+    def _build_header_card(self) -> QtWidgets.QFrame:
+        card = QtWidgets.QFrame()
+        card.setObjectName("heroCard")
+        hero_layout = QtWidgets.QHBoxLayout(card)
+        hero_layout.setContentsMargins(18, 16, 18, 16)
+
+        logo_label = QtWidgets.QLabel()
+        logo_label.setObjectName("heroLogo")
+        logo_pixmap = QtGui.QPixmap(resource_path("293T-Logo.ico")).scaledToHeight(
+            70, QtCore.Qt.TransformationMode.SmoothTransformation
+        )
+        logo_label.setPixmap(logo_pixmap)
+
+        text_col = QtWidgets.QWidget()
+        text_col_layout = QtWidgets.QVBoxLayout(text_col)
+        text_col_layout.setContentsMargins(0, 0, 0, 0)
+        text_col_layout.setSpacing(4)
+        title = QtWidgets.QLabel("293T Split Scheduler")
+        title.setObjectName("heroTitle")
+        subtitle = QtWidgets.QLabel("Create clean, balanced split rotations in seconds.")
+        subtitle.setObjectName("heroSubtitle")
+        text_col_layout.addWidget(title)
+        text_col_layout.addWidget(subtitle)
+
+        hero_layout.addWidget(logo_label, 0, QtCore.Qt.AlignmentFlag.AlignVCenter)
+        hero_layout.addWidget(text_col, 1)
+        return card
 
     def _refined_qss(self) -> str:
         return """
-            QWidget { font-family: 'Segoe UI', Helvetica, Arial; font-size: 12pt; color: #1e272e; }
-            QMainWindow { background-color: #f5f6fa; }
-            QLabel#logo_label {margin-top: 10px; margin-bottom: 5px; }
-            QGroupBox { border: 1px solid #ccc; border-radius: 10px; margin-top: 10px; padding: 10px; }
-            QPushButton {
-                background-color: #4a90e2; color: white; border-radius: 8px;
-                padding: 8px 16px; font-weight: bold;
+            QWidget {
+                font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                font-size: 11pt;
+                color: #123542;
             }
-            QPushButton:hover { background-color: #357ABD; }
-            QPlainTextEdit, QDateEdit, QSpinBox, QComboBox {
-                background: white; color: #1e272e;
-                border-radius: 6px; border: 1px solid #bbb; padding: 4px;
+            QMainWindow {
+                background-color: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 #f4f1e8,
+                    stop: 1 #eef6f8
+                );
+            }
+            QFrame#heroCard {
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 #1e5d74,
+                    stop: 1 #2f7d8b
+                );
+                border-radius: 16px;
+                border: 1px solid #2a6f85;
+            }
+            QLabel#heroTitle {
+                font-size: 22pt;
+                font-weight: 700;
+                color: #ffffff;
+            }
+            QLabel#heroSubtitle {
+                font-size: 11pt;
+                color: #d6ecf2;
+            }
+            QLabel#heroLogo {
+                margin-right: 8px;
+            }
+            QGroupBox {
+                background: #ffffff;
+                border: 1px solid #d5e1e6;
+                border-radius: 12px;
+                margin-top: 8px;
+                padding: 14px;
+                font-weight: 600;
+                color: #0e3f55;
+            }
+            QGroupBox::title {
+                left: 12px;
+                padding: 0 4px;
+            }
+            QLineEdit, QPlainTextEdit, QDateEdit, QSpinBox, QComboBox {
+                background: #f9fcfd;
+                border: 1px solid #c8d9e1;
+                border-radius: 8px;
+                padding: 6px 8px;
+                color: #133947;
+            }
+            QLineEdit:focus, QPlainTextEdit:focus, QDateEdit:focus, QSpinBox:focus, QComboBox:focus {
+                border: 1px solid #2f7d8b;
+                background: #ffffff;
             }
             QComboBox QAbstractItemView {
-                background: #ffffff; color: #1e272e;
-                selection-background-color: #4a90e2; selection-color: white;
-                border: 1px solid #bbb; border-radius: 6px;
+                background: #ffffff;
+                color: #123542;
+                selection-background-color: #2f7d8b;
+                selection-color: #ffffff;
+                border: 1px solid #c8d9e1;
             }
-            /* ✅ Fix table styling */
-            QHeaderView::section {
-                background-color: #e6e9ef;
-                color: #1e272e;
-                padding: 4px;
-                border: 1px solid #d0d0d0;
-                font-weight: bold;
+            QRadioButton {
+                spacing: 8px;
+            }
+            QPushButton {
+                border-radius: 9px;
+                font-weight: 600;
+                padding: 7px 14px;
+            }
+            QPushButton[variant="primary"] {
+                background: #cf613f;
+                color: #ffffff;
+                border: 1px solid #b9583a;
+            }
+            QPushButton[variant="primary"]:hover {
+                background: #ba5434;
+            }
+            QPushButton[variant="secondary"] {
+                background: #ffffff;
+                color: #1b576e;
+                border: 1px solid #b8ccd5;
+            }
+            QPushButton[variant="secondary"]:hover {
+                background: #f2f8fa;
             }
             QTableView {
                 background: #ffffff;
-                alternate-background-color: #f2f4f8;
-                color: #1e272e;
-                gridline-color: #d0d0d0;
-                selection-background-color: #4a90e2;
-                selection-color: white;
+                border: 1px solid #d0dee5;
+                border-radius: 10px;
+                alternate-background-color: #f4f9fb;
+                gridline-color: #dde7eb;
+                selection-background-color: #2f7d8b;
+                selection-color: #ffffff;
             }
-            QTableCornerButton::section {
-                background: #e6e9ef;
-                border: 1px solid #d0d0d0;
+            QHeaderView::section {
+                background: #e6f0f4;
+                color: #1a4b61;
+                border: none;
+                border-bottom: 1px solid #d0dee5;
+                padding: 8px 6px;
+                font-weight: 700;
             }
-            """
+        """
 
 
     # -----------------------
